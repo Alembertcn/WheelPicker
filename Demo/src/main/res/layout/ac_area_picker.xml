@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aigestudio="http://schemas.android.com/apk/res-auto"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FFFFFF"
@@ -12,36 +12,37 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="#E5DEEB"
-        aigestudio:wheel_atmospheric="true"
-        aigestudio:wheel_curved="true"
-        aigestudio:wheel_cyclic="true"
-        aigestudio:wheel_item_align="right"
-        aigestudio:wheel_item_text_color="#A7A7DB"
-        aigestudio:wheel_item_text_size="24sp"
-        aigestudio:wheel_selected_item_text_color="#536D8A" />
+        app:wheel_atmospheric="true"
+        app:wheel_curved="true"
+        app:wheel_item_text_trans_x="3dp"
+        app:wheel_cyclic="true"
+        app:wheel_item_align="right"
+        app:wheel_item_text_color="#A7A7DB"
+        app:wheel_item_text_size="24sp"
+        app:wheel_selected_item_text_color="#536D8A" />
 
     <com.aigestudio.wheelpicker.WheelPicker
         android:id="@+id/main_wheel_center"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="#E5DEEB"
-        aigestudio:wheel_atmospheric="true"
-        aigestudio:wheel_curved="true"
-        aigestudio:wheel_cyclic="true"
-        aigestudio:wheel_item_text_color="#A7A7DB"
-        aigestudio:wheel_item_text_size="24sp"
-        aigestudio:wheel_selected_item_text_color="#536D8A" />
+        app:wheel_atmospheric="true"
+        app:wheel_curved="true"
+        app:wheel_cyclic="true"
+        app:wheel_item_text_color="#A7A7DB"
+        app:wheel_item_text_size="24sp"
+        app:wheel_selected_item_text_color="#536D8A" />
 
     <com.aigestudio.wheelpicker.WheelPicker
         android:id="@+id/main_wheel_right"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="#E5DEEB"
-        aigestudio:wheel_atmospheric="true"
-        aigestudio:wheel_curved="true"
-        aigestudio:wheel_cyclic="true"
-        aigestudio:wheel_item_align="left"
-        aigestudio:wheel_item_text_color="#A7A7DB"
-        aigestudio:wheel_item_text_size="24sp"
-        aigestudio:wheel_selected_item_text_color="#536D8A" />
+        app:wheel_atmospheric="true"
+        app:wheel_curved="true"
+        app:wheel_cyclic="true"
+        app:wheel_item_align="left"
+        app:wheel_item_text_color="#A7A7DB"
+        app:wheel_item_text_size="24sp"
+        app:wheel_selected_item_text_color="#536D8A" />
 </LinearLayout>

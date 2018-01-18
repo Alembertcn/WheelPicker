@@ -1,5 +1,6 @@
 package com.aigestudio.wheelpicker;
 
+
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Camera;
@@ -24,16 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * 滚轮选择器
- * <p>
- * WheelPicker
- *
- * @author AigeStudio 2015-12-12
- * @author AigeStudio 2016-06-17
- *         更新项目结构
- *         <p>
- *         New project structure
- * @version 1.1.0
+ * @author hai
  */
 public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable {
     /**
@@ -54,6 +46,7 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
     private static final String TAG = WheelPicker.class.getSimpleName();
 
     private final Handler mHandler = new Handler();
+    private int mItemTextTransX;//在aligtleft 的基础上向右偏移多少可以为负数 如有需要还可以扩展aligtRight
 
     private Paint mPaint;
     private Scroller mScroller;
@@ -109,12 +102,15 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
     private int mTextMaxWidth, mTextMaxHeight;
 
     /**
-     * 数据项文本颜色以及被选中的数据项文本颜色
+     * 数据项文本颜色以及被选中的数据项文本颜色单位的颜色
      *
      * @see #setItemTextColor(int)
      * @see #setSelectedItemTextColor(int)
+     * @see #setUnitTextColor(int)
      */
-    private int mItemTextColor, mSelectedItemTextColor;
+    private int mItemTextColor;
+    private int mSelectedItemTextColor;
+    private int mUnitTextColor = -1;
 
     /**
      * 数据项文本尺寸
@@ -195,12 +191,12 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
     /**
      * 滚轮选择器中心坐标
      */
-    private int mWheelCenterX, mWheelCenterY;
+    private float mWheelCenterX, mWheelCenterY;
 
     /**
      * 滚轮选择器绘制中心坐标
      */
-    private int mDrawnCenterX, mDrawnCenterY;
+    private float mDrawnCenterX, mDrawnCenterY;
 
     /**
      * 滚轮选择器视图区域在Y轴方向上的偏移值
@@ -293,34 +289,45 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
     public WheelPicker(Context context, AttributeSet attrs) {
         super(context, attrs);
 
-        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.WheelPicker);
-        int idData = a.getResourceId(R.styleable.WheelPicker_wheel_data, 0);
+        int count = attrs.getAttributeCount();
+        Log.e(TAG, "----------------" + count + "----------------");
+        for (int i = 0; i < count; i++) {
+            String attrName = attrs.getAttributeName(i);
+            String attrVal = attrs.getAttributeValue(i);
+            Log.e(TAG, "attrName = " + attrName + " , attrVal = " + attrVal);
+        }
+
+
+        TypedArray a = context.obtainStyledAttributes(attrs, com.aigestudio.wheelpicker.R.styleable.WheelPicker);
+        int idData = a.getResourceId(com.aigestudio.wheelpicker.R.styleable.WheelPicker_wheel_data, 0);
         mData = Arrays.asList(getResources()
-                .getStringArray(idData == 0 ? R.array.WheelArrayDefault : idData));
-        mItemTextSize = a.getDimensionPixelSize(R.styleable.WheelPicker_wheel_item_text_size,
-                getResources().getDimensionPixelSize(R.dimen.WheelItemTextSize));
-        mVisibleItemCount = a.getInt(R.styleable.WheelPicker_wheel_visible_item_count, 7);
-        mSelectedItemPosition = a.getInt(R.styleable.WheelPicker_wheel_selected_item_position, 0);
-        hasSameWidth = a.getBoolean(R.styleable.WheelPicker_wheel_same_width, false);
+                .getStringArray(idData == 0 ? com.aigestudio.wheelpicker.R.array.WheelArrayDefault : idData));
+        mItemTextSize = a.getDimensionPixelSize(com.aigestudio.wheelpicker.R.styleable.WheelPicker_wheel_item_text_size,
+                getResources().getDimensionPixelSize(com.aigestudio.wheelpicker.R.dimen.WheelItemTextSize));
+        mVisibleItemCount = a.getInt(com.aigestudio.wheelpicker.R.styleable.WheelPicker_wheel_visible_item_count, 7);
+        mSelectedItemPosition = a.getInt(com.aigestudio.wheelpicker.R.styleable.WheelPicker_wheel_selected_item_position, 0);
+        hasSameWidth = a.getBoolean(com.aigestudio.wheelpicker.R.styleable.WheelPicker_wheel_same_width, false);
         mTextMaxWidthPosition =
-                a.getInt(R.styleable.WheelPicker_wheel_maximum_width_text_position, -1);
-        mMaxWidthText = a.getString(R.styleable.WheelPicker_wheel_maximum_width_text);
+                a.getInt(com.aigestudio.wheelpicker.R.styleable.WheelPicker_wheel_maximum_width_text_position, -1);
+        mMaxWidthText = a.getString(com.aigestudio.wheelpicker.R.styleable.WheelPicker_wheel_maximum_width_text);
         mSelectedItemTextColor = a.getColor
-                (R.styleable.WheelPicker_wheel_selected_item_text_color, -1);
-        mItemTextColor = a.getColor(R.styleable.WheelPicker_wheel_item_text_color, 0xFF888888);
-        mItemSpace = a.getDimensionPixelSize(R.styleable.WheelPicker_wheel_item_space,
-                getResources().getDimensionPixelSize(R.dimen.WheelItemSpace));
-        isCyclic = a.getBoolean(R.styleable.WheelPicker_wheel_cyclic, false);
-        hasIndicator = a.getBoolean(R.styleable.WheelPicker_wheel_indicator, false);
-        mIndicatorColor = a.getColor(R.styleable.WheelPicker_wheel_indicator_color, 0xFFEE3333);
-        mIndicatorSize = a.getDimensionPixelSize(R.styleable.WheelPicker_wheel_indicator_size,
-                getResources().getDimensionPixelSize(R.dimen.WheelIndicatorSize));
-        hasCurtain = a.getBoolean(R.styleable.WheelPicker_wheel_curtain, false);
-        mCurtainColor = a.getColor(R.styleable.WheelPicker_wheel_curtain_color, 0x88FFFFFF);
-        hasAtmospheric = a.getBoolean(R.styleable.WheelPicker_wheel_atmospheric, false);
-        isCurved = a.getBoolean(R.styleable.WheelPicker_wheel_curved, false);
-        mItemAlign = a.getInt(R.styleable.WheelPicker_wheel_item_align, ALIGN_CENTER);
-        fontPath = a.getString(R.styleable.WheelPicker_wheel_font_path);
+                (com.aigestudio.wheelpicker.R.styleable.WheelPicker_wheel_selected_item_text_color, -1);
+
+        mItemTextTransX = a.getDimensionPixelSize(com.aigestudio.wheelpicker.R.styleable.WheelPicker_wheel_item_text_trans_x, 0);
+        mItemTextColor = a.getColor(com.aigestudio.wheelpicker.R.styleable.WheelPicker_wheel_item_text_color, 0xFF888888);
+        mItemSpace = a.getDimensionPixelSize(com.aigestudio.wheelpicker.R.styleable.WheelPicker_wheel_item_space,
+                getResources().getDimensionPixelSize(com.aigestudio.wheelpicker.R.dimen.WheelItemSpace));
+        isCyclic = a.getBoolean(com.aigestudio.wheelpicker.R.styleable.WheelPicker_wheel_cyclic, false);
+        hasIndicator = a.getBoolean(com.aigestudio.wheelpicker.R.styleable.WheelPicker_wheel_indicator, false);
+        mIndicatorColor = a.getColor(com.aigestudio.wheelpicker.R.styleable.WheelPicker_wheel_indicator_color, 0xFFEE3333);
+        mIndicatorSize = a.getDimensionPixelSize(com.aigestudio.wheelpicker.R.styleable.WheelPicker_wheel_indicator_size,
+                getResources().getDimensionPixelSize(com.aigestudio.wheelpicker.R.dimen.WheelIndicatorSize));
+        hasCurtain = a.getBoolean(com.aigestudio.wheelpicker.R.styleable.WheelPicker_wheel_curtain, false);
+        mCurtainColor = a.getColor(com.aigestudio.wheelpicker.R.styleable.WheelPicker_wheel_curtain_color, 0x88FFFFFF);
+        hasAtmospheric = a.getBoolean(com.aigestudio.wheelpicker.R.styleable.WheelPicker_wheel_atmospheric, false);
+        isCurved = a.getBoolean(com.aigestudio.wheelpicker.R.styleable.WheelPicker_wheel_curved, false);
+        mItemAlign = a.getInt(com.aigestudio.wheelpicker.R.styleable.WheelPicker_wheel_item_align, ALIGN_CENTER);
+        fontPath = a.getString(com.aigestudio.wheelpicker.R.styleable.WheelPicker_wheel_font_path);
         a.recycle();
 
         // 可见数据项改变后更新与之相关的参数
@@ -329,7 +336,6 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
 
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG | Paint.LINEAR_TEXT_FLAG);
         mPaint.setTextSize(mItemTextSize);
-
         if (fontPath != null) {
             Typeface typeface = Typeface.createFromAsset(context.getAssets(), fontPath);
             setTypeface(typeface);
@@ -392,6 +398,7 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
                 mTextMaxWidth = Math.max(mTextMaxWidth, width);
             }
         }
+
         Paint.FontMetrics metrics = mPaint.getFontMetrics();
         mTextMaxHeight = (int) (metrics.bottom - metrics.top);
     }
@@ -508,7 +515,10 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
                 mDrawnCenterX = mWheelCenterX;
                 break;
         }
-        mDrawnCenterY = (int) (mWheelCenterY - ((mPaint.ascent() + mPaint.descent()) / 2));
+        Paint.FontMetrics fontMetrics = mPaint.getFontMetrics();
+        mDrawnCenterY = mWheelCenterY - ((fontMetrics.bottom - fontMetrics.top) / 2) - fontMetrics.top;
+        // mDrawnCenterY = mWheelCenterY - ((mPaint.descent() - mPaint.ascent()) / 2) - mPaint.ascent();
+
     }
 
     private void computeFlingLimitY() {
@@ -521,8 +531,8 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
     private void computeIndicatorRect() {
         if (!hasIndicator) return;
         int halfIndicatorSize = mIndicatorSize / 2;
-        int indicatorHeadCenterY = mWheelCenterY + mHalfItemHeight;
-        int indicatorFootCenterY = mWheelCenterY - mHalfItemHeight;
+        int indicatorHeadCenterY = (int) (mWheelCenterY + mHalfItemHeight);
+        int indicatorFootCenterY = (int) (mWheelCenterY - mHalfItemHeight);
         mRectIndicatorHead.set(mRectDrawn.left, indicatorHeadCenterY - halfIndicatorSize,
                 mRectDrawn.right, indicatorHeadCenterY + halfIndicatorSize);
         mRectIndicatorFoot.set(mRectDrawn.left, indicatorFootCenterY - halfIndicatorSize,
@@ -531,8 +541,8 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
 
     private void computeCurrentItemRect() {
         if (!hasCurtain && mSelectedItemTextColor == -1) return;
-        mRectCurrentItem.set(mRectDrawn.left, mWheelCenterY - mHalfItemHeight, mRectDrawn.right,
-                mWheelCenterY + mHalfItemHeight);
+        mRectCurrentItem.set(mRectDrawn.left, ((int) (mWheelCenterY - mHalfItemHeight)), mRectDrawn.right,
+                ((int) (mWheelCenterY + mHalfItemHeight)));
     }
 
     @Override
@@ -555,7 +565,7 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
             }
             mPaint.setColor(mItemTextColor);
             mPaint.setStyle(Paint.Style.FILL);
-            int mDrawnItemCenterY = mDrawnCenterY + (drawnOffsetPos * mItemHeight) +
+            float mDrawnItemCenterY = mDrawnCenterY + (drawnOffsetPos * mItemHeight) +
                     mScrollOffsetY % mItemHeight;
 
             int distanceToCenter = 0;
@@ -578,16 +588,16 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
                 if (degree > 90) degree = 90;
                 distanceToCenter = computeSpace((int) degree);
 
-                int transX = mWheelCenterX;
+                float transX = mWheelCenterX;
                 switch (mItemAlign) {
                     case ALIGN_LEFT:
-                        transX = mRectDrawn.left;
+                        transX = mRectDrawn.left + mItemTextTransX;
                         break;
                     case ALIGN_RIGHT:
                         transX = mRectDrawn.right;
                         break;
                 }
-                int transY = mWheelCenterY - distanceToCenter;
+                float transY = mWheelCenterY - distanceToCenter;
 
                 mCamera.save();
                 mCamera.rotateX(degree);
@@ -613,7 +623,7 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
             }
             // 根据卷曲与否计算数据项绘制Y方向中心坐标
             // Correct item's drawn centerY base on curved state
-            int drawnCenterY = isCurved ? mDrawnCenterY - distanceToCenter : mDrawnItemCenterY;
+            float drawnCenterY = isCurved ? mDrawnCenterY - distanceToCenter : mDrawnItemCenterY;
 
             // 判断是否需要为当前数据项绘制不同颜色
             // Judges need to draw different color for current item or not
@@ -621,36 +631,39 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
                 canvas.save();
                 if (isCurved) canvas.concat(mMatrixRotate);
                 canvas.clipRect(mRectCurrentItem, Region.Op.DIFFERENCE);
-                canvas.drawText(data, mDrawnCenterX, drawnCenterY, mPaint);
+                canvas.drawText(data, mDrawnCenterX + mItemTextTransX, drawnCenterY, mPaint);
                 canvas.restore();
 
                 mPaint.setColor(mSelectedItemTextColor);
                 canvas.save();
                 if (isCurved) canvas.concat(mMatrixRotate);
                 canvas.clipRect(mRectCurrentItem);
-                canvas.drawText(data, mDrawnCenterX, drawnCenterY, mPaint);
+                canvas.drawText(data, mDrawnCenterX + mItemTextTransX, drawnCenterY, mPaint);
+
                 canvas.restore();
             } else {
                 canvas.save();
                 canvas.clipRect(mRectDrawn);
                 if (isCurved) canvas.concat(mMatrixRotate);
-                canvas.drawText(data, mDrawnCenterX, drawnCenterY, mPaint);
+                canvas.drawText(data, mDrawnCenterX + mItemTextTransX, drawnCenterY, mPaint);
+
                 canvas.restore();
             }
             if (isDebug) {
                 canvas.save();
                 canvas.clipRect(mRectDrawn);
                 mPaint.setColor(0xFFEE3333);
-                int lineCenterY = mWheelCenterY + (drawnOffsetPos * mItemHeight);
+                float lineCenterY = mWheelCenterY + (drawnOffsetPos * mItemHeight);
                 canvas.drawLine(mRectDrawn.left, lineCenterY, mRectDrawn.right, lineCenterY,
                         mPaint);
                 mPaint.setColor(0xFF3333EE);
                 mPaint.setStyle(Paint.Style.STROKE);
-                int top = lineCenterY - mHalfItemHeight;
+                float top = lineCenterY - mHalfItemHeight;
                 canvas.drawRect(mRectDrawn.left, top, mRectDrawn.right, top + mItemHeight, mPaint);
                 canvas.restore();
             }
         }
+
         // 是否需要绘制幕布
         // Need to draw curtain or not
         if (hasCurtain) {
@@ -666,6 +679,7 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
             canvas.drawRect(mRectIndicatorHead, mPaint);
             canvas.drawRect(mRectIndicatorFoot, mPaint);
         }
+
         if (isDebug) {
             mPaint.setColor(0x4433EE33);
             mPaint.setStyle(Paint.Style.FILL);
@@ -673,6 +687,8 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
             canvas.drawRect(0, 0, getWidth(), getPaddingTop(), mPaint);
             canvas.drawRect(getWidth() - getPaddingRight(), 0, getWidth(), getHeight(), mPaint);
             canvas.drawRect(0, getHeight() - getPaddingBottom(), getWidth(), getHeight(), mPaint);
+
+            canvas.drawLine(0,mDrawnCenterY,getWidth(),mDrawnCenterY,mPaint); //baseline
         }
     }
 
@@ -809,11 +825,6 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
     }
 
     @Override
-    public void setDebug(boolean isDebug) {
-        this.isDebug = isDebug;
-    }
-
-    @Override
     public int getVisibleItemCount() {
         return mVisibleItemCount;
     }
@@ -853,29 +864,29 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
     }
 
     public void setSelectedItemPosition(int position, final boolean animated) {
-      isTouchTriggered = false;
-      if (animated && mScroller.isFinished()) { // We go non-animated regardless of "animated" parameter if scroller is in motion
-        int length = getData().size();
-        int itemDifference = position - mCurrentItemPosition;
-        if (itemDifference == 0)
-          return;
-        if (isCyclic && Math.abs(itemDifference) > (length / 2)) { // Find the shortest path if it's cyclic
-          itemDifference += (itemDifference > 0) ? -length : length;
+        isTouchTriggered = false;
+        if (animated && mScroller.isFinished()) { // We go non-animated regardless of "animated" parameter if scroller is in motion
+            int length = getData().size();
+            int itemDifference = position - mCurrentItemPosition;
+            if (itemDifference == 0)
+                return;
+            if (isCyclic && Math.abs(itemDifference) > (length / 2)) { // Find the shortest path if it's cyclic
+                itemDifference += (itemDifference > 0) ? -length : length;
+            }
+            mScroller.startScroll(0, mScroller.getCurrY(), 0, (-itemDifference) * mItemHeight);
+            mHandler.post(this);
+        } else {
+            if (!mScroller.isFinished())
+                mScroller.abortAnimation();
+            position = Math.min(position, mData.size() - 1);
+            position = Math.max(position, 0);
+            mSelectedItemPosition = position;
+            mCurrentItemPosition = position;
+            mScrollOffsetY = 0;
+            computeFlingLimitY();
+            requestLayout();
+            invalidate();
         }
-        mScroller.startScroll(0, mScroller.getCurrY(), 0, (-itemDifference) * mItemHeight);
-        mHandler.post(this);
-      } else {
-        if (!mScroller.isFinished())
-          mScroller.abortAnimation();
-        position = Math.min(position, mData.size() - 1);
-        position = Math.max(position, 0);
-        mSelectedItemPosition = position;
-        mCurrentItemPosition = position;
-        mScrollOffsetY = 0;
-        computeFlingLimitY();
-        requestLayout();
-        invalidate();
-      }
     }
 
     @Override
@@ -965,6 +976,10 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
         mSelectedItemTextColor = color;
         computeCurrentItemRect();
         invalidate();
+    }
+
+    public void setUnitTextColor(int unitTextColor) {
+        mUnitTextColor = unitTextColor;
     }
 
     @Override
@@ -1112,6 +1127,11 @@ public class WheelPicker extends View implements IDebug, IWheelPicker, Runnable 
         computeTextSize();
         requestLayout();
         invalidate();
+    }
+
+    @Override
+    public void setDebug(boolean isDebug) {
+        this.isDebug = isDebug;
     }
 
     /**

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <declare-styleable name="WheelPicker">
+<resources >
+    <declare-styleable name="WheelPicker" >
         <attr name="wheel_data" format="reference" />
         <attr name="wheel_selected_item_position" format="integer" />
         <attr name="wheel_item_text_size" format="dimension" />
@@ -19,11 +19,12 @@
         <attr name="wheel_curtain_color" format="color" />
         <attr name="wheel_atmospheric" format="boolean" />
         <attr name="wheel_curved" format="boolean" />
-        <attr name="wheel_item_align" format="enum">
+        <attr name="wheel_item_text_trans_x" format="dimension" />
+        <attr name="wheel_item_align" format="enum" >
             <enum name="center" value="0" />
             <enum name="left" value="1" />
             <enum name="right" value="2" />
-        </attr>
+        </attr >
         <attr name="wheel_font_path" format="string" />
-    </declare-styleable>
-</resources>
+    </declare-styleable >
+</resources >
